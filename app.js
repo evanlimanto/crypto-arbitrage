@@ -136,13 +136,20 @@ async.parallel([
     }),
 ], (err) => {
   if (err) return console.error(err);
+  console.log("Currency Pairs");
   for (const code in bestPrices) {
-    const profit = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
-    console.log(`Code: ${code}, Buy: ${bestPrices[code] * EXCHANGE}`);
+    console.log(`Code: ${code}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
     if (code.endsWith('USD')) {
-      console.log(`Sell: ${sellPrices[code]}, Exchange; ${bestExchanges[code]}, %: ${profit}`);
+      const profit = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
+      console.log(`Sell: ${sellPrices[code]}, %: ${profit}`);
     }
     console.log();
+  }
+
+  console.log("===================================");
+
+  for (const code in sellPrices) {
+    console.log(`Code: ${code}, Sell: ${sellPrices[code]}`);
   }
   return;
 });
