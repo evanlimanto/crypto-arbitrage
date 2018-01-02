@@ -140,16 +140,14 @@ async.parallel([
   for (const code in bestPrices) {
     console.log(`Code: ${code}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
     if (code.endsWith('USD')) {
-      const profit = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
-      console.log(`Sell: ${sellPrices[code]}, %: ${profit}`);
+      const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
+      console.log(`Sell: ${sellPrices[code]}, %: ${Math.round(margin * 100, 2)}`);
+    } else {
+      const pair = getPair(code);
+      const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
+      console.log(`%: ${(margin * 100).toFixed(2)}`);
     }
     console.log();
-  }
-
-  console.log("===================================");
-
-  for (const code in sellPrices) {
-    console.log(`Code: ${code}, Sell: ${sellPrices[code]}`);
   }
   return;
 });
