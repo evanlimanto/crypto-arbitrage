@@ -61,7 +61,7 @@ async.parallel([
         }
 
         const sell = JSON.parse(body).ticker.sell;
-        sellPrices[code.slice(0, -4).toUpperCase() + 'USD'] = sell;
+        sellPrices[code.slice(0, -4).toUpperCase() + 'USD'] = parseFloat(sell);
         return callback(null, [code, sell]);
       });
     }, outerCallback),
@@ -91,7 +91,7 @@ async.parallel([
     });
   },
 
-  (callback) =>
+  /*(callback) =>
     // BitFinex
     request('https://api.bitfinex.com/v1/symbols', (err, res, body) => {
       const param = JSON.parse(body).map(item => `t${item.toUpperCase()}`).join(',');
@@ -101,7 +101,7 @@ async.parallel([
         });
         return callback(err);
       });
-    }),
+    }),*/
 
   (callback) =>
     // Coinbase
@@ -126,10 +126,12 @@ async.parallel([
       const data = JSON.parse(body).result;
       const markets = data.map(item => item.MarketName);
       async.eachLimit(markets, ASYNC_LIMIT, (market, callback) => {
-        if (getPair(market)) {
+        const code = market.split('-').join('');
+        const pair = getPair(code);
+        if (pair) {
           request('https://bittrex.com/api/v1.1/public/getticker?market=' + market, (err, res, body) => {
             const bid = JSON.parse(body).result.Bid;
-            update(market.split('-').join(''), bid, 'bittrex');
+            update(pair[1] + pair[0], bid, 'bittrex');
             return callback(null);
           });
         } else {
@@ -147,8 +149,10 @@ async.parallel([
       console.log(`Sell: ${sellPrices[code]}, %: ${(margin * 100).toFixed(2)}`);
     } else {
       const pair = getPair(code);
-      const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
-      console.log(`%: ${(margin * 100).toFixed(2)}`);
+      if (bestPrices[pair[1] + 'USD']) {
+        const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
+        console.log(`%: ${(margin * 100).toFixed(2)}`);
+      }
     }
     console.log();
   }
