@@ -15,6 +15,9 @@ const idrCodes = [
   'etc_idr',
   'ltc_idr',
   'xrp_idr',
+  'nxt_idr',
+  'waves_idr',
+  'xzc_idr'
 ];
 const currencyCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase()).concat('USD'));
 const usdCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase() + 'USD'));
@@ -141,7 +144,7 @@ async.parallel([
     console.log(`Code: ${code}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
     if (code.endsWith('USD')) {
       const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
-      console.log(`Sell: ${sellPrices[code]}, %: ${Math.round(margin * 100, 2)}`);
+      console.log(`Sell: ${sellPrices[code]}, %: ${(margin * 100).toFixed(2)}`);
     } else {
       const pair = getPair(code);
       const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
