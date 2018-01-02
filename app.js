@@ -51,7 +51,8 @@ function update(market, price, exchange) {
   }
 }
 
-async.parallel([
+exchangeAPIs = {
+  "bitcoin.co.id":
   (outerCallback) =>
     // bitcoin.co.id
     async.eachLimit(idrCodes, ASYNC_LIMIT, (code, callback) => {
@@ -66,6 +67,7 @@ async.parallel([
       });
     }, outerCallback),
 
+  "binance":
   (callback) =>
     // Binance
     request('https://api.binance.com/api/v3/ticker/price', (err, res, body) => {
@@ -75,6 +77,7 @@ async.parallel([
       return callback(err);
     }),
 
+  "gdax":
   (outerCallback) => {
     // GDAX
     const gdaxClient = new Gdax.PublicClient();
@@ -91,6 +94,25 @@ async.parallel([
     });
   },
 
+  "gemini":
+  (outerCallback) => {
+    // Gemini
+    request('https://api.gemini.com/v1/symbols', (err, res, body) => {
+      const symbols = JSON.parse(body).map(item => item.toUpperCase()).filter(symbol => usdCodes.has(symbol));
+      async.map(symbols, (item, callback) => {
+        request('https://api.gemini.com/v1/pubticker/' + item, (err, res, body) => {
+          if (err) return callback(err)
+          const ticker = JSON.parse(body)
+          update(item, parseFloat(ticker['ask']), 'gemini')
+          return callback(err)
+        });
+      }, (err, results) => {
+        return outerCallback(err);
+      });
+    })
+  },
+
+  "bitfinex":
   (callback) =>
     // BitFinex
     request('https://api.bitfinex.com/v1/symbols', (err, res, body) => {
@@ -103,6 +125,7 @@ async.parallel([
       });
     }),
 
+  "coinbase":
   (callback) =>
     // Coinbase
     async.map(currencyCodesDashed, (code, innerCallback) => {
@@ -120,6 +143,7 @@ async.parallel([
       });
     }, (err) => callback(err)),
 
+  "bittrex":
   (outerCallback) =>
     // Bittrex
     request('https://bittrex.com/api/v1.1/public/getmarkets', (err, res, body) => {
@@ -137,7 +161,13 @@ async.parallel([
         }
       }, outerCallback);
     }),
-], (err) => {
+}
+
+exchanges = ["bitcoin.co.id", "bittrex", "gemini", "gdax", "coinbase"]
+
+async.parallel(
+  exchanges.map(exchange => exchangeAPIs[exchange])
+, (err) => {
   if (err) return console.error(err);
   console.log("Currency Pairs");
   for (const code in bestPrices) {
