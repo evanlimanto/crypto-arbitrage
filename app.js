@@ -16,36 +16,35 @@ const idrCodes = [
   'ltc_idr',
   'xrp_idr',
 ];
-const currencyCodes = idrCodes.map(code => code.slice(0, -4).toUpperCase() + 'USD');
-const currencyCodesDashed = idrCodes.map(code => code.slice(0, -4).toUpperCase() + '-USD');
+const currencyCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase()).concat('USD'));
+const usdCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase() + 'USD'));
+const currencyCodesDashed = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase() + '-USD'));
 
-const tickers = {
-  // Key 1: exchange
-  // Key 2/3: currency
-  // Key 4: price
-};
 const sellPrices = {};
 const bestExchanges = {};
 const bestPrices = {};
 
-function get(item) {
-  for (var i = 0; i < currencyCodes.length; i++) {
-    if (item.startsWith(currencyCodes[i])) {
-      return currencyCodes[i];
+function getPair(market) {
+  for (const codeA of currencyCodes) {
+    if (market.startsWith(codeA)) {
+      const codeB = market.slice(codeA.length);
+      if (currencyCodes.has(codeB)) {
+        return [codeA, codeB];
+      }
     }
   }
   return null;
 }
 
-function update(symbol, price, exchange) {
-  const code = get(symbol);
-  if (!code) {
+function update(market, price, exchange) {
+  const codePair = getPair(market);
+  if (!codePair) {
     return;
   }
   price = parseFloat(price);
-  if (!bestExchanges[code] || (price < bestPrices[code])) {
-    bestExchanges[code] = exchange;
-    bestPrices[code] = price;
+  if (!bestExchanges[market] || (price < bestPrices[market])) {
+    bestExchanges[market] = exchange;
+    bestPrices[market] = price;
   }
 }
 
@@ -118,23 +117,32 @@ async.parallel([
       });
     }, (err) => callback(err)),
 
-  /*(outerCallback) =>
+  (outerCallback) =>
     // Bittrex
     request('https://bittrex.com/api/v1.1/public/getmarkets', (err, res, body) => {
       const data = JSON.parse(body).result;
       const markets = data.map(item => item.MarketName);
       async.eachLimit(markets, ASYNC_LIMIT, (market, callback) => {
-        request('https://bittrex.com/api/v1.1/public/getticker?market=' + market, (err, res, body) => {
-          const bid = JSON.parse(body).result.Bid;
+        if (getPair(market)) {
+          request('https://bittrex.com/api/v1.1/public/getticker?market=' + market, (err, res, body) => {
+            const bid = JSON.parse(body).result.Bid;
+            update(market.split('-').join(''), bid, 'bittrex');
+            return callback(null);
+          });
+        } else {
           return callback(null);
-        });
+        }
       }, outerCallback);
-    }),*/
+    }),
 ], (err) => {
   if (err) return console.error(err);
-  currencyCodes.forEach((code) => {
+  for (const code in bestPrices) {
     const profit = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
-    console.log(`Code: ${code}, Buy: ${bestPrices[code] * EXCHANGE}, Sell: ${sellPrices[code]}, Exchange; ${bestExchanges[code]}, %: ${profit}`);
-  });
+    console.log(`Code: ${code}, Buy: ${bestPrices[code] * EXCHANGE}`);
+    if (code.endsWith('USD')) {
+      console.log(`Sell: ${sellPrices[code]}, Exchange; ${bestExchanges[code]}, %: ${profit}`);
+    }
+    console.log();
+  }
   return;
 });
