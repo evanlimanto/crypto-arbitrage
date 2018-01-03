@@ -1,4 +1,5 @@
 const async = require('async');
+const colors = require('colors');
 const Gdax = require('gdax');
 const request = require('request');
 const _ = require('lodash');
@@ -123,7 +124,7 @@ exchangeAPIs = {
         });
         return callback(err);
       });
-    }),*/
+    }),
 
   "coinbase":
   (callback) =>
@@ -171,20 +172,29 @@ async.parallel(
   exchanges.map(exchange => exchangeAPIs[exchange])
 , (err) => {
   if (err) return console.error(err);
-  console.log("Currency Pairs");
-  for (const code in bestPrices) {
-    console.log(`Code: ${code}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
-    if (code.endsWith('USD')) {
-      const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
-      console.log(`Sell: ${sellPrices[code]}, %: ${(margin * 100).toFixed(2)}`);
-    } else {
-      const pair = getPair(code);
-      if (bestPrices[pair[1] + 'USD']) {
-        const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
-        console.log(`%: ${(margin * 100).toFixed(2)}`);
-      }
+  const usdCodes = Object.keys(bestPrices).filter(code => code.endsWith('USD'));
+  const nonUSDCodes = Object.keys(bestPrices).filter(code => !usdCodes.includes(code));
+
+  console.log("USD Arbs");
+  usdCodes.forEach((code) => {
+    console.log(code);
+    console.log(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
+    const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
+    console.log(`Sell: ${sellPrices[code]}, %: ${((margin * 100).toFixed(2)).toString().green}`);
+    console.log();
+  });
+
+  console.log("===============================");
+  console.log("Crypto Arbs");
+  nonUSDCodes.forEach((code) => {
+    console.log(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
+    const pair = getPair(code);
+    if (bestPrices[pair[1] + 'USD']) {
+      const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
+      console.log(`%: ${((margin * 100).toFixed(2)).toString().green}`);
     }
     console.log();
-  }
+  });
+
   return;
 });
