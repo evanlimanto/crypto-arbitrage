@@ -176,7 +176,7 @@ const exchanges = ["bitcoin.co.id", "binance", "gemini", "gdax", "coinbase"];
 
 const generateSpreads = (callback) =>
   async.parallel(exchanges.map(exchange => exchangeAPIs[exchange]), (err) => {
-    if (err) return console.error(err);
+    if (err) return callback(err);
     const usdCodes = Object.keys(bestPrices).filter(code => code.endsWith('USD'));
     const nonUSDCodes = Object.keys(bestPrices).filter(code => !usdCodes.includes(code));
 
