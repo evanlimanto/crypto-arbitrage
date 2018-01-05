@@ -17,10 +17,13 @@
   },
   "homepage": "https://github.com/evanlimanto/crypto-arbitrage#readme",
   "dependencies": {
+    "ansi-to-html": "^0.6.3",
     "async": "^2.6.0",
     "colors": "^1.1.2",
+    "express": "^4.16.2",
     "gdax": "^0.4.2",
     "lodash": "^4.17.4",
-    "request": "^2.83.0"
+    "request": "^2.83.0",
+    "string-builder": "^0.1.4"
   }
 }
