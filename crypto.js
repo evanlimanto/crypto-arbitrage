@@ -172,7 +172,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["bitcoin.co.id", "binance", "gemini", "gdax", "coinbase"];
+const exchanges = ["bitcoin.co.id", "binance", "gdax", "coinbase"];
 
 const generateSpreads = (callback) =>
   async.parallel(exchanges.map(exchange => exchangeAPIs[exchange]), (err) => {
