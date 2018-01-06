@@ -4,7 +4,7 @@ const express = require('express');
 const app = express();
 const convert = new Convert();
 
-app.get('/', (req, res, next) => {
+app.get('/g3t4rb5', (req, res, next) => {
   crypto.generateSpreads(
     (output) =>
     res.send(
