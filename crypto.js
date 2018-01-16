@@ -5,7 +5,7 @@ const request = require('request');
 const StringBuilder = require('string-builder');
 const _ = require('lodash');
 
-const EXCHANGE = 13490;
+const EXCHANGE = 13380;
 const ASYNC_LIMIT = 5;
 
 // bitcoin.id
@@ -15,11 +15,13 @@ const idrCodes = [
   'btg_idr',
   'eth_idr',
   'etc_idr',
+  'ignis_idr',
   'ltc_idr',
-  'xrp_idr',
   'nxt_idr',
   'waves_idr',
-  'xzc_idr'
+  'xlm_idr',
+  'xrp_idr',
+  'xzc_idr',
 ];
 const currencyCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase()).concat('USD'));
 const usdCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase() + 'USD'));
@@ -28,6 +30,7 @@ const currencyCodesDashed = new Set(idrCodes.map(code => code.slice(0, -4).toUpp
 const sellPrices = {};
 const bestExchanges = {};
 const bestPrices = {};
+const bestMargins = {};
 
 function getPair(market) {
   for (const codeA of currencyCodes) {
@@ -47,9 +50,12 @@ function update(market, price, exchange) {
     return;
   }
   price = parseFloat(price);
-  if (!bestExchanges[market] || (price < bestPrices[market])) {
+  const margin = sellPrices[codePair[0] + 'USD'] /
+    (price * EXCHANGE * bestPrices[codePair[1] + 'USD']) - 1;
+  if (!bestExchanges[market] || Math.abs(margin) > Math.abs(bestMargins[market])) {
     bestExchanges[market] = exchange;
     bestPrices[market] = price;
+    bestMargins[market] = margin;
   }
 }
 
@@ -62,9 +68,8 @@ exchangeAPIs = {
         if (err) {
           return callback(err);
         }
-        let sell;
         if (code === 'xlm_idr') {
-          sell = 13800;
+          sell = 4800; // Needs to be updated manually, since API doesn't work
         } else {
           sell = JSON.parse(body).ticker.sell;
         }
@@ -172,7 +177,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["bitcoin.co.id", "binance", "gdax", "coinbase"];
+const exchanges = ["bitcoin.co.id", "binance", "gdax", "bittrex", "bitfinex"];
 
 const generateSpreads = (callback) => {
   try {
@@ -186,7 +191,7 @@ const generateSpreads = (callback) => {
       sb.append("USD Arbs");
       usdCodes.forEach((code) => {
         sb.appendLine(code);
-        sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
+        sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
         const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
         sb.appendLine(`Sell: ${sellPrices[code]}, %: ${((margin * 100).toFixed(2)).toString().green}`);
         sb.appendLine();
@@ -195,7 +200,7 @@ const generateSpreads = (callback) => {
       sb.appendLine("===============================");
       sb.appendLine("Crypto Arbs");
       nonUSDCodes.forEach((code) => {
-        sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange; ${bestExchanges[code]}`);
+        sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
         const pair = getPair(code);
         if (bestPrices[pair[1] + 'USD']) {
           const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
