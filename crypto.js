@@ -2,11 +2,19 @@ const async = require('async');
 const colors = require('colors');
 const Gdax = require('gdax');
 const request = require('request');
+const sqlite = require('sqlite');
+const Promise = require('bluebird');
 const StringBuilder = require('string-builder');
 const _ = require('lodash');
 
 const EXCHANGE = 13380;
 const ASYNC_LIMIT = 5;
+const REFRESH_INTERVAL = 60 * 1000;
+
+const isDevelopment = process.env.NODE_ENV !== "production";
+
+const dbPromise = sqlite.open('./database.sqlite', { Promise });
+let db = null;
 
 // bitcoin.id
 const idrCodes = [
@@ -19,7 +27,7 @@ const idrCodes = [
   'ltc_idr',
   'nxt_idr',
   'waves_idr',
-  'xlm_idr',
+  // 'xlm_idr',
   'xrp_idr',
   'xzc_idr',
 ];
@@ -69,7 +77,7 @@ exchangeAPIs = {
           return callback(err);
         }
         if (code === 'xlm_idr') {
-          sell = 4800; // Needs to be updated manually, since API doesn't work
+          sell = 4392; // Needs to be updated manually, since API doesn't work
         } else {
           sell = JSON.parse(body).ticker.sell;
         }
@@ -177,16 +185,17 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["bitcoin.co.id", "binance", "gdax", "bittrex", "bitfinex"];
+const exchanges = ["bitcoin.co.id", "binance", "gdax"];
 
 const generateSpreads = (callback) => {
   try {
     async.parallel(exchanges.map(exchange => exchangeAPIs[exchange]), (err) => {
       if (err) return callback(err);
-      const usdCodes = Object.keys(bestPrices).filter(code => code.endsWith('USD'));
-      const nonUSDCodes = Object.keys(bestPrices).filter(code => !usdCodes.includes(code));
+      const usdCodes = Object.keys(bestPrices).filter(code => code.endsWith('USD')).sort();
+      const nonUSDCodes = Object.keys(bestPrices).filter(code => !usdCodes.includes(code)).sort();
 
       const sb = new StringBuilder();
+      const timestamp = Date.now();
 
       sb.append("USD Arbs");
       usdCodes.forEach((code) => {
@@ -195,6 +204,11 @@ const generateSpreads = (callback) => {
         const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
         sb.appendLine(`Sell: ${sellPrices[code]}, %: ${((margin * 100).toFixed(2)).toString().green}`);
         sb.appendLine();
+
+        if (isDevelopment && !isNaN(margin)) {
+          db.run(`insert into margins (code, timestamp, margin)
+                  values ('${code}', ${timestamp}, ${margin})`);
+        }
       });
 
       sb.appendLine("===============================");
@@ -205,6 +219,11 @@ const generateSpreads = (callback) => {
         if (bestPrices[pair[1] + 'USD']) {
           const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
           sb.appendLine(`%: ${((margin * 100).toFixed(2)).toString().green}`);
+
+          if (isDevelopment && !isNaN(margin)) {
+            db.run(`insert into margins (code, timestamp, margin)
+                    values ('${code}', ${timestamp}, ${margin})`);
+          }
         }
         sb.appendLine();
       });
@@ -216,8 +235,30 @@ const generateSpreads = (callback) => {
   }
 }
 
+async function init() {
+  db = await dbPromise;
+  db.run(`
+    create table if not exists margins (
+      id integer primary key,
+      code varchar(20),
+      timestamp integer,
+      margin float
+    )
+  `);
+}
+
+if (isDevelopment) {
+  init();
+}
+
 if (require.main === module) {
-  generateSpreads((output) => console.log(output));
+  const display = () => generateSpreads((output) => {
+    console.log(output);
+    console.log("\n\n========================================\n\n");
+    setTimeout(display, REFRESH_INTERVAL);
+  });
+
+  display();
 }
 
 module.exports = { generateSpreads };
