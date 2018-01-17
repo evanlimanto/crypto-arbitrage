@@ -9,7 +9,7 @@ const _ = require('lodash');
 
 const EXCHANGE = 13380;
 const ASYNC_LIMIT = 5;
-const REFRESH_INTERVAL = 60 * 1000;
+const REFRESH_INTERVAL = 30 * 1000;
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -36,7 +36,7 @@ const usdCodes = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase() + 
 const currencyCodesDashed = new Set(idrCodes.map(code => code.slice(0, -4).toUpperCase() + '-USD'));
 
 const sellPrices = {};
-const bestExchanges = {};
+let bestExchanges = {};
 const bestPrices = {};
 const bestMargins = {};
 
@@ -189,6 +189,7 @@ const exchanges = ["bitcoin.co.id", "binance", "gdax"];
 
 const generateSpreads = (callback) => {
   try {
+    bestExchanges = {};
     async.parallel(exchanges.map(exchange => exchangeAPIs[exchange]), (err) => {
       if (err) return callback(err);
       const usdCodes = Object.keys(bestPrices).filter(code => code.endsWith('USD')).sort();
@@ -197,7 +198,8 @@ const generateSpreads = (callback) => {
       const sb = new StringBuilder();
       const timestamp = Date.now();
 
-      sb.append("USD Arbs");
+      sb.append((new Date(Date.now())).toString());
+      sb.appendLine("USD Arbs");
       usdCodes.forEach((code) => {
         sb.appendLine(code);
         sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
@@ -205,7 +207,7 @@ const generateSpreads = (callback) => {
         sb.appendLine(`Sell: ${sellPrices[code]}, %: ${((margin * 100).toFixed(2)).toString().green}`);
         sb.appendLine();
 
-        if (isDevelopment && !isNaN(margin)) {
+        if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
           db.run(`insert into margins (code, timestamp, margin)
                   values ('${code}', ${timestamp}, ${margin})`);
         }
@@ -220,7 +222,7 @@ const generateSpreads = (callback) => {
           const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
           sb.appendLine(`%: ${((margin * 100).toFixed(2)).toString().green}`);
 
-          if (isDevelopment && !isNaN(margin)) {
+          if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
             db.run(`insert into margins (code, timestamp, margin)
                     values ('${code}', ${timestamp}, ${margin})`);
           }
