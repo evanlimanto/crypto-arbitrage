@@ -17,7 +17,7 @@ for (i, code) in enumerate(codes):
     c.execute("select * from margins where code = '{}' order by timestamp asc".format(code))
     items = c.fetchall()
 
-    plt.subplot(5, 4, i + 1)
+    plt.subplot(5, 5, i + 1)
     plt.title(code)
     axes = plt.gca()
     axes.set_ylim([-0.1, LIMIT])

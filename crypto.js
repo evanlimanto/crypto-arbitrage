@@ -27,7 +27,7 @@ const idrCodes = [
   'ltc_idr',
   'nxt_idr',
   'waves_idr',
-  // 'xlm_idr',
+  'xlm_idr',
   'xrp_idr',
   'xzc_idr',
 ];
@@ -77,7 +77,7 @@ exchangeAPIs = {
           return callback(err);
         }
         if (code === 'xlm_idr') {
-          sell = 4392; // Needs to be updated manually, since API doesn't work
+          sell = 7000; // Needs to be updated manually, since API doesn't work
         } else {
           sell = JSON.parse(body).ticker.sell;
         }
@@ -185,7 +185,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["bitcoin.co.id", "binance", "gdax"];
+const exchanges = ["bitcoin.co.id", "binance", "gdax", "bittrex"];
 
 const generateSpreads = (callback) => {
   try {
