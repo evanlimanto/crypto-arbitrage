@@ -1,8 +1,11 @@
 const crypto = require('./crypto');
 const Convert = require('ansi-to-html');
 const express = require('express');
+const nocache = require('nocache');
 const app = express();
 const convert = new Convert();
+
+app.use(nocache());
 
 app.get('/g3t4rb5', (req, res, next) => {
   crypto.generateSpreads(

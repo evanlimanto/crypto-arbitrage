@@ -77,7 +77,7 @@ exchangeAPIs = {
           return callback(err);
         }
         if (code === 'xlm_idr') {
-          sell = 7000; // Needs to be updated manually, since API doesn't work
+          sell = 6770; // Needs to be updated manually, since API doesn't work
         } else {
           sell = JSON.parse(body).ticker.sell;
         }
