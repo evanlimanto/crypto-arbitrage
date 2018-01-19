@@ -48,7 +48,7 @@ const checkEmailTime = () => {
 };
 
 const sendEmail = (html) => {
-  const data {
+  const data = {
     from: 'Crypto Digest <warren@buffett.mailgun.org>',
     to: 'evanlimanto@gmail.com, philmon.tanuri@gmail.com',
     subject: 'Your Quad-Hourly Rent',
