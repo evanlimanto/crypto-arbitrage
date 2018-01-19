@@ -15,7 +15,7 @@ const EXCHANGE = 13380;
 const ASYNC_LIMIT = 5;
 const REFRESH_INTERVAL = 30 * 1000;
 
-const MARGIN_THRESHOLD = 0.05; // 10 percent
+const MARGIN_THRESHOLD = 0.1; // 10 percent
 const MAIL_THRESHOLD = 15 * 60 * 1000; // 15 minutes
 const FILE_PATH = '/tmp/4rbt1m3';
 const MAILGUN_API_KEY = 'key-4d2f3ae1510bce83bcaeeb165bb72140';
@@ -379,14 +379,12 @@ if (isDevelopment) {
   init();
 }
 
-if (require.main === module) {
-  const display = () => generateSpreads((output) => {
-    console.log(output);
-    console.log("\n\n========================================\n\n");
-    setTimeout(display, REFRESH_INTERVAL);
-  });
+const display = () => generateSpreads((output) => {
+  console.log(output);
+  console.log("\n\n========================================\n\n");
+  setTimeout(display, REFRESH_INTERVAL);
+});
 
-  display();
-}
+display();
 
 module.exports = { generateSpreads };
