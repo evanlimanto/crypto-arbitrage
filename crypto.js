@@ -15,7 +15,7 @@ const EXCHANGE = 13380;
 const ASYNC_LIMIT = 5;
 const REFRESH_INTERVAL = 30 * 1000;
 
-const MARGIN_THRESHOLD = 0.1; // 10 percent
+const MARGIN_THRESHOLD = 0.05; // 10 percent
 const MAIL_THRESHOLD = 15 * 60 * 1000; // 15 minutes
 const FILE_PATH = '/tmp/4rbt1m3';
 const MAILGUN_API_KEY = 'key-4d2f3ae1510bce83bcaeeb165bb72140';
@@ -48,8 +48,8 @@ const checkEmailTime = () => {
 };
 
 const sendEmail = (html) => {
-  const data = {
-    from: 'Berkeley Central <warren@buffett.mailgun.org>',
+  const data {
+    from: 'Crypto Digest <warren@buffett.mailgun.org>',
     to: 'evanlimanto@gmail.com, philmon.tanuri@gmail.com',
     subject: 'Your Quad-Hourly Rent',
     html: convert.toHtml(
@@ -131,14 +131,15 @@ exchangeAPIs = {
         if (err) {
           return callback(err);
         }
+        let bid;
         if (code === 'xlm_idr') {
-          sell = 7200; // Needs to be updated manually, since API doesn't work
+          bid = 7218; // Needs to be updated manually, since API doesn't work
         } else {
-          sell = JSON.parse(body).ticker.sell;
+          bid = JSON.parse(body).ticker.buy;
         }
 
-        sellPrices[code.slice(0, -4).toUpperCase() + 'USD'] = parseFloat(sell);
-        return callback(null, [code, sell]);
+        sellPrices[code.slice(0, -4).toUpperCase() + 'USD'] = parseFloat(bid);
+        return callback(null, [code, bid]);
       });
     }, outerCallback),
 
