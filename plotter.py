@@ -1,9 +1,8 @@
-import sqlite3
 import matplotlib.pyplot as plt
+import psycopg2
 
-DB_NAME = 'database.sqlite'
-
-conn = sqlite3.connect(DB_NAME)
+conn = psycopg2.connect(dbname="d2f4nmqbcdjrab", host="ec2-54-243-253-24.compute-1.amazonaws.com",
+                        user="wmedvcxsmpxqpm", password="585d85f6cf5488245cfa3f085f1bccb87778b6b93563f90a9b6ed69ec60f6660")
 
 c = conn.cursor()
 c.execute("select distinct(code) from margins")
