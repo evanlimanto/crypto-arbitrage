@@ -319,7 +319,7 @@ const generateSpreads = (callback) => {
           emailSb.appendLine(tempSb.toString());
         }
 
-        if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
+        if (!isNaN(margin) && isFinite(margin)) {
           pool.query(`insert into margins (code, timestamp, margin)
                       values ('${code}', ${timestamp}, ${margin})`, (err) => err && console.error(err));
         }
@@ -342,7 +342,7 @@ const generateSpreads = (callback) => {
             emailSb.appendLine(tempSb.toString());
           }
 
-          if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
+          if (!isNaN(margin) && isFinite(margin)) {
             pool.query(`insert into margins (code, timestamp, margin)
                         values ('${code}', ${timestamp}, ${margin})`, (err) => err && console.error(err));
           }
@@ -386,9 +386,7 @@ async function init() {
   `);
 }
 
-if (isDevelopment) {
-  init();
-}
+init();
 
 const display = () => generateSpreads((output) => {
   if (!isDevelopment) {
