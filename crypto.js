@@ -3,8 +3,9 @@ const colors = require('colors');
 const Convert = require('ansi-to-html');
 const fs = require('fs');
 const Gdax = require('gdax');
+const pg = require('pg');
 const request = require('request');
-const sqlite = require('sqlite');
+const url = require('url');
 const Promise = require('bluebird');
 const StringBuilder = require('string-builder');
 const _ = require('lodash');
@@ -68,9 +69,6 @@ const sendEmail = (html) => {
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
-const dbPromise = sqlite.open('./database.sqlite', { Promise });
-let db = null;
-
 // bitcoin.id
 const idrCodes = [
   'btc_idr',
@@ -133,7 +131,7 @@ exchangeAPIs = {
         }
         let bid;
         if (code === 'xlm_idr') {
-          bid = 7218; // Needs to be updated manually, since API doesn't work
+          bid = 7031; // Needs to be updated manually, since API doesn't work
         } else {
           bid = JSON.parse(body).ticker.buy;
         }
@@ -322,8 +320,8 @@ const generateSpreads = (callback) => {
         }
 
         if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
-          db.run(`insert into margins (code, timestamp, margin)
-                  values ('${code}', ${timestamp}, ${margin})`);
+          pool.query(`insert into margins (code, timestamp, margin)
+                      values ('${code}', ${timestamp}, ${margin})`, (err) => err && console.error(err));
         }
         sb.appendLine(tempSb.toString());
       });
@@ -345,8 +343,8 @@ const generateSpreads = (callback) => {
           }
 
           if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
-            db.run(`insert into margins (code, timestamp, margin)
-                    values ('${code}', ${timestamp}, ${margin})`);
+            pool.query(`insert into margins (code, timestamp, margin)
+                        values ('${code}', ${timestamp}, ${margin})`, (err) => err && console.error(err));
           }
         }
         sb.appendLine(tempSb.toString());
@@ -363,13 +361,26 @@ const generateSpreads = (callback) => {
   }
 }
 
+// Postgres
+const params = url.parse(process.env.DATABASE_URL);
+const auth = params.auth.split(':');
+
+const config = {
+  user: auth[0],
+  password: auth[1],
+  host: params.hostname,
+  port: params.port,
+  database: params.pathname.split('/')[1],
+  ssl: (process.env.NODE_ENV !== 'development'),
+};
+const pool = new pg.Pool(config);
+
 async function init() {
-  db = await dbPromise;
-  db.run(`
+  await pool.query(`
     create table if not exists margins (
-      id integer primary key,
+      id serial,
       code varchar(20),
-      timestamp integer,
+      timestamp bigint,
       margin float
     )
   `);
@@ -380,8 +391,10 @@ if (isDevelopment) {
 }
 
 const display = () => generateSpreads((output) => {
-  console.log(output);
-  console.log("\n\n========================================\n\n");
+  if (!isDevelopment) {
+    console.log(output);
+    console.log("\n\n========================================\n\n");
+  }
   setTimeout(display, REFRESH_INTERVAL);
 });
 
