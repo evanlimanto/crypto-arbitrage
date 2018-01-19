@@ -1,6 +1,5 @@
 import sqlite3
 import matplotlib.pyplot as plt
-import numpy as np
 
 DB_NAME = 'database.sqlite'
 
@@ -23,5 +22,5 @@ for (i, code) in enumerate(codes):
     last = items[-1][2]
     plt.plot([((last-item[2]) / 1000.0 / 60.0) for item in items], [item[3] for item in items])
 fig.tight_layout()
-plt.subplots_adjust(left=0.03, top=0.95, bottom=0.01, right=1.0, wspace=0.18, hspace=0.24)
+plt.subplots_adjust(left=0.05, top=0.95, bottom=0.05, right=1.0, wspace=0.18, hspace=0.24)
 plt.show()
