@@ -16,7 +16,7 @@ const ASYNC_LIMIT = 5;
 const REFRESH_INTERVAL = 30 * 1000;
 
 const MARGIN_THRESHOLD = 0.1; // 10 percent
-const MAIL_THRESHOLD = 15 * 60 * 1000; // 15 minutes
+const MAIL_THRESHOLD = 5 * 60 * 1000; // 5 minutes
 const FILE_PATH = '/tmp/4rbt1m3';
 const MAILGUN_API_KEY = 'key-4d2f3ae1510bce83bcaeeb165bb72140';
 const MAILGUN_DOMAIN = 'sandboxc8609fb8f62942dbb335628ee1685dfc.mailgun.org';
