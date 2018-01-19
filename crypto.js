@@ -1,5 +1,7 @@
 const async = require('async');
 const colors = require('colors');
+const Convert = require('ansi-to-html');
+const fs = require('fs');
 const Gdax = require('gdax');
 const request = require('request');
 const sqlite = require('sqlite');
@@ -7,9 +9,62 @@ const Promise = require('bluebird');
 const StringBuilder = require('string-builder');
 const _ = require('lodash');
 
+const convert = new Convert();
+
 const EXCHANGE = 13380;
 const ASYNC_LIMIT = 5;
 const REFRESH_INTERVAL = 30 * 1000;
+
+const MARGIN_THRESHOLD = 0.1; // 10 percent
+const MAIL_THRESHOLD = 15 * 60 * 1000; // 15 minutes
+const FILE_PATH = '/tmp/4rbt1m3';
+const MAILGUN_API_KEY = 'key-4d2f3ae1510bce83bcaeeb165bb72140';
+const MAILGUN_DOMAIN = 'sandboxc8609fb8f62942dbb335628ee1685dfc.mailgun.org';
+const mailgun = require('mailgun-js')({ apiKey: MAILGUN_API_KEY, domain: MAILGUN_DOMAIN });
+
+const getLastEmailTime = () => {
+  if (!fs.existsSync(FILE_PATH)) {
+    fs.closeSync(fs.openSync(FILE_PATH, 'w'));
+    return 0;
+  }
+  const data = fs.readFileSync(FILE_PATH);
+  if (!data || data.length !== 13) {
+    return 0;
+  }
+  const timestamp = parseInt(data, 10);
+  if (isNaN(timestamp) || !isFinite(timestamp)) {
+    return 0;
+  }
+  return timestamp;
+};
+
+const writeEmailTime = () => {
+  const timestamp = Date.now();
+  fs.writeFileSync(FILE_PATH, timestamp);
+};
+
+const checkEmailTime = () => {
+  return (Date.now() - getLastEmailTime() > MAIL_THRESHOLD);
+};
+
+const sendEmail = (html) => {
+  const data = {
+    from: 'Berkeley Central <warren@buffett.mailgun.org>',
+    to: 'evanlimanto@gmail.com, philmon.tanuri@gmail.com',
+    subject: 'Your Quad-Hourly Rent',
+    html: convert.toHtml(
+      html.replace(/\n/g, "<br />")
+    ).replace(/#FFF/g, "#000"),
+  };
+  mailgun.messages().send(data, (err, body) => {
+    if (err) {
+      return console.error(err);
+    } else {
+      writeEmailTime();
+      return console.log(body);
+    }
+  });
+};
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -77,7 +132,7 @@ exchangeAPIs = {
           return callback(err);
         }
         if (code === 'xlm_idr') {
-          sell = 7271; // Needs to be updated manually, since API doesn't work
+          sell = 7200; // Needs to be updated manually, since API doesn't work
         } else {
           sell = JSON.parse(body).ticker.sell;
         }
@@ -245,39 +300,60 @@ const generateSpreads = (callback) => {
       const nonUSDCodes = Object.keys(bestPrices).filter(code => !usdCodes.includes(code)).sort();
 
       const sb = new StringBuilder();
+
+      let hasHighMargin = false;
       const timestamp = Date.now();
+      const emailSb = new StringBuilder();
+      emailSb.appendLine(`Good news — time to pay your rent with an interest of ${(MARGIN_THRESHOLD * 100).toFixed(2).toString().green}%!`);
 
       sb.append((new Date(Date.now())).toString());
       sb.appendLine("USD Arbs");
       usdCodes.forEach((code) => {
-        sb.appendLine(code);
-        sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
+        const tempSb = new StringBuilder();
         const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
-        sb.appendLine(`Sell: ${sellPrices[code]}, %: ${((margin * 100).toFixed(2)).toString().green}`);
-        sb.appendLine();
+        tempSb.appendLine(code);
+        tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
+        tempSb.appendLine(`Sell: ${sellPrices[code]}, %: ${(margin * 100).toFixed(2).toString().green}`);
+
+        if (!isNaN(margin) && isFinite(margin) && margin > MARGIN_THRESHOLD) {
+          hasHighMargin = true;
+          emailSb.appendLine(tempSb.toString());
+        }
 
         if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
           db.run(`insert into margins (code, timestamp, margin)
                   values ('${code}', ${timestamp}, ${margin})`);
         }
+        sb.appendLine(tempSb.toString());
       });
 
       sb.appendLine("===============================");
       sb.appendLine("Crypto Arbs");
       nonUSDCodes.forEach((code) => {
-        sb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
+        const tempSb = new StringBuilder();
         const pair = getPair(code);
         if (bestPrices[pair[1] + 'USD']) {
           const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
-          sb.appendLine(`%: ${((margin * 100).toFixed(2)).toString().green}`);
+          tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
+          tempSb.appendLine(`%: ${((margin * 100).toFixed(2)).toString().green}`);
+
+          if (!isNaN(margin) && isFinite(margin) && margin > MARGIN_THRESHOLD
+              && pair[0] != 'XLM') {
+            hasHighMargin = true;
+            emailSb.appendLine(tempSb.toString());
+          }
 
           if (isDevelopment && !isNaN(margin) && isFinite(margin)) {
             db.run(`insert into margins (code, timestamp, margin)
                     values ('${code}', ${timestamp}, ${margin})`);
           }
         }
-        sb.appendLine();
+        sb.appendLine(tempSb.toString());
       });
+
+      if (hasHighMargin && checkEmailTime()) {
+        sendEmail(emailSb.toString());
+      }
 
       return callback(sb.toString());
     }));
