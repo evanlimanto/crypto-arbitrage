@@ -14,7 +14,7 @@ for (i, code) in enumerate(codes):
     c.execute("select max(timestamp) from margins")
     max_timestamp = c.fetchall()[0][0]
 
-    c.execute("select * from margins where code = '{}' and {} - timestamp <= 200 * 60 * 1000 order by timestamp asc".format(code, max_timestamp))
+    c.execute("select * from margins where code = '{}' and {} - timestamp <= 1000 * 60 * 1000 order by timestamp asc".format(code, max_timestamp))
     items = c.fetchall()
 
     last = items[-1][2]
