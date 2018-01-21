@@ -123,17 +123,11 @@ exchangeAPIs = {
   (outerCallback) =>
     // bitcoin.co.id
     async.eachLimit(idrCodes, ASYNC_LIMIT, (code, callback) => {
-      request('https://vip.bitcoin.co.id/api/' + code + '/ticker', (err, res, body) => {
+      request('https://vip.bitcoin.co.id/api/' + code.replace('xlm', 'str') + '/ticker', (err, res, body) => {
         if (err) {
           return callback(err);
         }
-        let bid;
-        if (code === 'xlm_idr') {
-          bid = 7031; // Needs to be updated manually, since API doesn't work
-        } else {
-          bid = JSON.parse(body).ticker.buy;
-        }
-
+        const bid = JSON.parse(body).ticker.buy;
         sellPrices[code.slice(0, -4).toUpperCase() + 'USD'] = parseFloat(bid);
         return callback(null, [code, bid]);
       });
@@ -334,8 +328,7 @@ const generateSpreads = (callback) => {
           tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
           tempSb.appendLine(`%: ${((margin * 100).toFixed(2)).toString().green}`);
 
-          if (!isNaN(margin) && isFinite(margin) && margin > MARGIN_THRESHOLD
-              && pair[0] != 'XLM') {
+          if (!isNaN(margin) && isFinite(margin) && margin > MARGIN_THRESHOLD) {
             hasHighMargin = true;
             emailSb.appendLine(tempSb.toString());
           }
