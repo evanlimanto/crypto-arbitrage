@@ -25,7 +25,7 @@ for (i, code) in enumerate(codes):
 
     axes = plt.gca()
     axes.invert_xaxis()
-    axes.set_ylim(bottom=lastprice - 3, top=lastprice + 3)
+    axes.set_ylim(bottom=lastprice - 5, top=lastprice + 6)
     axes.yaxis.tick_right()
     axes.yaxis.set_label_position("right")
     plt.tick_params(axis='both', which='minor', labelsize=8)

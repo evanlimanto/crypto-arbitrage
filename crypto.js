@@ -17,7 +17,7 @@ const ASYNC_LIMIT = 5;
 const REFRESH_INTERVAL = 30 * 1000;
 
 const MARGIN_THRESHOLD = 0.1; // 10 percent
-const MAIL_THRESHOLD = 10 * 60 * 1000; // 5 minutes
+const MAIL_THRESHOLD = 10 * 60 * 1000; // 10 minutes
 const FILE_PATH = '/tmp/4rbt1m3';
 const MAILGUN_API_KEY = 'key-4d2f3ae1510bce83bcaeeb165bb72140';
 const MAILGUN_DOMAIN = 'sandboxc8609fb8f62942dbb335628ee1685dfc.mailgun.org';
@@ -127,9 +127,14 @@ exchangeAPIs = {
         if (err) {
           return callback(err);
         }
-        const bid = JSON.parse(body).ticker.buy;
+        let bid;
+        try {
+          bid = JSON.parse(body).ticker.buy;
+        } catch (e) {
+          return callback(e);
+        }
         sellPrices[code.slice(0, -4).toUpperCase() + 'USD'] = parseFloat(bid);
-        return callback(null, [code, bid]);
+        return callback(null);
       });
     }, outerCallback),
 
@@ -140,9 +145,13 @@ exchangeAPIs = {
       if (err) {
         return callback(err);
       }
-      JSON.parse(body).forEach((item) => {
-        update(item.symbol, item.price, 'binance');
-      });
+      try {
+        JSON.parse(body).forEach((item) => {
+          update(item.symbol, item.price, 'binance');
+        });
+      } catch (e) {
+        return callback(e);
+      }
       return callback(null);
     }),
 
@@ -172,13 +181,23 @@ exchangeAPIs = {
       if (err) {
         return outerCallback(err);
       }
-      const symbols = JSON.parse(body).map(item => item.toUpperCase()).filter(symbol => usdCodes.has(symbol));
+      let symbols;
+      try {
+        symbols = JSON.parse(body).map(item => item.toUpperCase()).filter(symbol => usdCodes.has(symbol));
+      } catch (e) {
+        return outerCallback(null);
+      }
       async.map(symbols, (item, callback) => {
         request('https://api.gemini.com/v1/pubticker/' + item, (err, res, body) => {
           if (err) {
             return callback(err);
           }
-          const ticker = JSON.parse(body)
+          let ticker;
+          try {
+            ticker = JSON.parse(body);
+          } catch (e) {
+            return callback(null);
+          }
           update(item, parseFloat(ticker['ask']), 'gemini')
           return callback(null);
         });
@@ -193,13 +212,23 @@ exchangeAPIs = {
       if (err) {
         return outerCallback(err);
       }
-      const result = JSON.parse(body).result;
+      let result;
+      try {
+        result = JSON.parse(body).result;
+      } catch (e) {
+        return outerCallback(null);
+      }
       async.forEach(Object.keys(result), (item, callback) => {
         request('https://api.kraken.com/0/public/Ticker?pair=' + item, (err, res, body) => {
           if (err) {
             return callback(err);
           }
-          const bodyObj = JSON.parse(body);
+          let bodyObj;
+          try {
+            bodyObj = JSON.parse(body);
+          } catch (e) {
+            return callback(null);
+          }
           if (bodyObj.error.length > 0) {
             return callback(null);
           }
@@ -218,14 +247,23 @@ exchangeAPIs = {
       if (err) {
         return callback(err);
       }
-      const param = JSON.parse(body).map(item => `t${item.toUpperCase()}`).join(',');
+      let param;
+      try {
+        param = JSON.parse(body).map(item => `t${item.toUpperCase()}`).join(',');
+      } catch (e) {
+        return callback(null);
+      }
       request('https://api.bitfinex.com/v2/tickers?symbols=' + param, (err, res, body) => {
         if (err) {
           return callback(err);
         }
-        JSON.parse(body).forEach(item => {
-          update(item[0].slice(1), item[1], 'bitfinex');
-        });
+        try {
+          JSON.parse(body).forEach(item => {
+            update(item[0].slice(1), item[1], 'bitfinex');
+          });
+        } catch(e) {
+          return callback(null);
+        }
         return callback(null);
       });
     }),
@@ -238,7 +276,12 @@ exchangeAPIs = {
         if (err) {
           return innerCallback(null);
         }
-        const parsed = JSON.parse(body);
+        let parsed;
+        try {
+          parsed = JSON.parse(body);
+        } catch(e) {
+          return innerCallback(null);
+        }
         if (parsed.errors) {
           return innerCallback(null);
         }
@@ -255,7 +298,12 @@ exchangeAPIs = {
       if (err) {
         return outerCallback(err);
       }
-      const data = JSON.parse(body).result;
+      let data;
+      try {
+        data = JSON.parse(body).result;
+      } catch (e) {
+        return outerCallback(err);
+      }
       const markets = data.map(item => item.MarketName);
       async.eachLimit(markets, ASYNC_LIMIT, (market, callback) => {
         const code = market.split('-').join('');
@@ -265,7 +313,12 @@ exchangeAPIs = {
             if (err) {
               return callback(err);
             }
-            const ask = JSON.parse(body).result.Ask;
+            let ask;
+            try {
+              ask = JSON.parse(body).result.Ask;
+            } catch (e) {
+              return callback(null);
+            }
             update(pair[1] + pair[0], ask, 'bittrex');
             return callback(null);
           });
@@ -276,7 +329,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["binance", "gdax", "bittrex", "kraken"];
+const exchanges = ["binance", "gdax", "kraken", "bittrex"];
 
 const generateSpreads = (callback) => {
   try {
