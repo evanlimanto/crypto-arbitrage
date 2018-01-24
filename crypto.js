@@ -240,6 +240,35 @@ exchangeAPIs = {
     })
   },
 
+  "bitstamp":
+  (callback) =>
+    request('https://www.bitstamp.net/api/v2/trading-pairs-info/', (err, res, body) => {
+      if (err) {
+        return callback(err);
+      }
+      let params;
+      try {
+        params = JSON.parse(body).map(item => item.url_symbol);
+      } catch (e) {
+        return callback(null);
+      }
+      async.forEach(params, (code, innerCallback) => {
+        request('https://www.bitstamp.net/api/v2/ticker/' + code, (err, res, body) => {
+          if (err) {
+            return innerCallback(null);
+          }
+          let ask;
+          try {
+            ask = JSON.parse(body).ask;
+          } catch (e) {
+            return innerCallback(null);
+          }
+          update(code.toUpperCase(), parseFloat(ask), 'bitstamp');
+          return innerCallback(null);
+        });
+      }, callback);
+    }),
+
   "bitfinex":
   (callback) =>
     // BitFinex
