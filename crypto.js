@@ -13,7 +13,7 @@ const _ = require('lodash');
 const convert = new Convert();
 
 const EXCHANGE = 13380;
-const ASYNC_LIMIT = 5;
+const ASYNC_LIMIT = 3;
 const REFRESH_INTERVAL = 30 * 1000;
 
 const MARGIN_THRESHOLD = 0.1; // 10 percent
@@ -358,7 +358,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["binance", "gdax", "kraken", "bittrex"];
+const exchanges = ["binance", "gdax", "bittrex"];
 
 const generateSpreads = (callback) => {
   try {
@@ -400,7 +400,7 @@ const generateSpreads = (callback) => {
         sb.appendLine(tempSb.toString());
       });
 
-      sb.appendLine("===============================");
+      sb.appendLine("==============================================================");
       sb.appendLine("Crypto Arbs");
       nonUSDCodes.forEach((code) => {
         const tempSb = new StringBuilder();
