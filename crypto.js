@@ -320,6 +320,26 @@ exchangeAPIs = {
       });
     }, callback),
 
+  "poloniex":
+  (callback) =>
+    request('https://poloniex.com/public?command=returnTicker', (err, res, body) => {
+      if (err) {
+        return callback(null);
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(body);
+      } catch(e) {
+        return callback(null);
+      }
+      Object.keys(parsed).forEach((code) => {
+        const ask = parsed[code].lowestAsk;
+        const pair = code.split('_');
+        update(pair[1] + pair[0], ask, 'poloniex');
+      });
+      return callback(null);
+    }),
+
   "bittrex":
   (outerCallback) =>
     // Bittrex
@@ -358,7 +378,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["binance", "gdax", "bittrex"];
+const exchanges = ["binance", "gdax", "bittrex", "poloniex"];
 
 const generateSpreads = (callback) => {
   try {
