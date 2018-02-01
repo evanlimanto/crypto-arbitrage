@@ -427,7 +427,7 @@ const generateSpreads = (callback) => {
         const pair = getPair(code);
         if (bestPrices[pair[1] + 'USD']) {
           const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
-          tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Trade: ${bestPrices[code]}, Sell: ${sellPrices[pair[0] + 'USD']}`);
+          tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[pair[1] + 'USD']}, Trade: ${bestPrices[code]}, Sell: ${sellPrices[pair[0] + 'USD']}`);
           tempSb.appendLine(`Exchange: ${bestExchanges[code]}, %: ${((margin * 100).toFixed(2)).toString().green}`);
 
           if (!isNaN(margin) && isFinite(margin) && margin > MARGIN_THRESHOLD) {
