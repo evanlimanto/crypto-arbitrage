@@ -12,7 +12,7 @@ const _ = require('lodash');
 
 const convert = new Convert();
 
-const EXCHANGE = 13380;
+const EXCHANGE = 13400;
 const ASYNC_LIMIT = 3;
 const REFRESH_INTERVAL = 30 * 1000;
 
@@ -378,7 +378,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["binance", "gdax", "bittrex", "poloniex"];
+const exchanges = ["binance", "gdax", "bittrex", "poloniex", "gemini", "kraken", "bitfinex"];
 
 const generateSpreads = (callback) => {
   try {
@@ -427,7 +427,7 @@ const generateSpreads = (callback) => {
         const pair = getPair(code);
         if (bestPrices[pair[1] + 'USD']) {
           const margin = sellPrices[pair[0] + 'USD'] / (bestPrices[code] * EXCHANGE * bestPrices[pair[1] + 'USD']) - 1;
-          tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Exchange: ${bestExchanges[code]}`);
+          tempSb.appendLine(`Code: ${code.toString().cyan}, Buy: ${bestPrices[code]}, Trade: ${bestPrices[code]}, Sell: ${sellPrices[pair[0] + 'USD']} Exchange: ${bestExchanges[code]}`);
           tempSb.appendLine(`%: ${((margin * 100).toFixed(2)).toString().green}`);
 
           if (!isNaN(margin) && isFinite(margin) && margin > MARGIN_THRESHOLD) {
