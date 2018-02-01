@@ -160,8 +160,14 @@ exchangeAPIs = {
     // GDAX
     const gdaxClient = new Gdax.PublicClient();
     gdaxClient.getProducts((err, res, body) => {
+      if (err) {
+        return callback(null);
+      }
       async.eachLimit(body, ASYNC_LIMIT, (item, callback) => {
         const { id } = item;
+        if (!id) {
+          return callback(null);
+        }
         const publicClient = new Gdax.PublicClient(id);
         publicClient.getProductTicker((err, res, data) => {
           if (err) {
