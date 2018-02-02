@@ -378,7 +378,7 @@ exchangeAPIs = {
     }),
 }
 
-const exchanges = ["binance", "gdax"];
+const exchanges = ["binance", "gdax", "bittrex"];
 
 const generateSpreads = (callback) => {
   try {
@@ -483,7 +483,7 @@ init();
 
 const display = () => generateSpreads((output) => {
   console.log(output);
-  console.log("\n\n========================================\n\n");
+  console.log("\n\n========================================");
   setTimeout(display, REFRESH_INTERVAL);
 });
 
