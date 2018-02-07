@@ -12,7 +12,7 @@ const _ = require('lodash');
 
 const convert = new Convert();
 
-const EXCHANGE = 13400;
+const EXCHANGE = 13500;
 const ASYNC_LIMIT = 3;
 const REFRESH_INTERVAL = 30 * 1000;
 
