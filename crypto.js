@@ -12,7 +12,7 @@ const _ = require('lodash');
 
 const convert = new Convert();
 
-const EXCHANGE = 13500;
+const EXCHANGE = 13650;
 const ASYNC_LIMIT = 3;
 const REFRESH_INTERVAL = 30 * 1000;
 
@@ -400,7 +400,7 @@ const generateSpreads = (callback) => {
       emailSb.appendLine(`Good news — time to pay your rent with an interest of ${(MARGIN_THRESHOLD * 100).toFixed(2).toString().green}%!`);
 
       sb.append((new Date(Date.now())).toString());
-      sb.appendLine("USD Arbs");
+      sb.appendLine("USD Arbs (IDR/USD: " + EXCHANGE.toString() + ")");
       usdCodes.forEach((code) => {
         const tempSb = new StringBuilder();
         const margin = sellPrices[code] / (bestPrices[code] * EXCHANGE) - 1;
