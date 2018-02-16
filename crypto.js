@@ -12,7 +12,7 @@ const _ = require('lodash');
 
 const convert = new Convert();
 
-const EXCHANGE = 13650;
+let EXCHANGE = 13650;
 const ASYNC_LIMIT = 3;
 const REFRESH_INTERVAL = 30 * 1000;
 
@@ -119,6 +119,14 @@ function update(market, price, exchange) {
 }
 
 exchangeAPIs = {
+  "klikbca":
+  (callback) =>
+    request('http://www.klikbca.com', (err, res, body) => {
+      const re = new RegExp('> USD(.*?)\r\n(.*?)"#dcdcdc">([0-9,\.]+)<');
+      EXCHANGE = parseFloat(body.match(re)[3]) * 1000;
+      return callback(null);
+    }),
+
   "bitcoin.co.id":
   (outerCallback) =>
     // bitcoin.co.id
@@ -384,7 +392,8 @@ const generateSpreads = (callback) => {
   try {
     bestExchanges = {};
     async.parallel([
-      exchangeAPIs["bitcoin.co.id"]
+      exchangeAPIs["bitcoin.co.id"],
+      exchangeAPIs["klikbca"],
     ], (err) => async.parallel(exchanges.map(exchange => exchangeAPIs[exchange]), (err) => {
       if (err) {
         return callback(err);
