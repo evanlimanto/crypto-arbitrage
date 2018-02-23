@@ -122,6 +122,9 @@ exchangeAPIs = {
   "klikbca":
   (callback) =>
     request('http://www.klikbca.com', (err, res, body) => {
+      if (err || !body) {
+        return callback(null);
+      }
       const re = new RegExp('> USD(.*?)\r\n(.*?)"#dcdcdc">([0-9,\.]+)<');
       EXCHANGE = parseFloat(body.match(re)[3]) * 1000;
       return callback(null);
