@@ -16,7 +16,7 @@ let EXCHANGE = 13650;
 const ASYNC_LIMIT = 3;
 const REFRESH_INTERVAL = 30 * 1000;
 
-const MARGIN_THRESHOLD = 0.1; // 10 percent
+const MARGIN_THRESHOLD = 0.05; // 10 percent
 const MAIL_THRESHOLD = 10 * 60 * 1000; // 10 minutes
 const FILE_PATH = '/tmp/4rbt1m3';
 const MAILGUN_API_KEY = 'key-4d2f3ae1510bce83bcaeeb165bb72140';
